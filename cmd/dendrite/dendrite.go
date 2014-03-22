@@ -3,8 +3,8 @@ package main
 import (
 	"bufio"
 	"flag"
+	"github.com/Benoss/dendrite"
 	"github.com/fizx/logs"
-	"github.com/onemorecloud/dendrite"
 	"io"
 	"log"
 	"os"

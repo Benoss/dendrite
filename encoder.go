@@ -13,6 +13,7 @@ type Encoder interface {
 }
 
 type JsonEncoder struct{}
+type GelfEncoder struct{}
 type StatsdEncoder struct{}
 type RawStringEncoder struct{}
 
@@ -23,6 +24,8 @@ func NewEncoder(u *url.URL) (Encoder, error) {
 		return new(JsonEncoder), nil
 	case "statsd":
 		return new(StatsdEncoder), nil
+	case "gelf":
+		return new(GelfEncoder), nil
 	}
 	return new(RawStringEncoder), nil
 }
@@ -33,6 +36,42 @@ func (*RawStringEncoder) Encode(out map[string]Column, writer io.Writer) {
 			writer.Write([]byte(v.Value.(string) + "\n"))
 		}
 	}
+}
+
+func (*GelfEncoder) Encode(out map[string]Column, writer io.Writer) {
+	stripped := make(map[string]interface{})
+	for k, v := range out {
+		switch k {
+		case "_hostname":
+			stripped["host"] = v.Value
+		case "_group":
+			stripped["_config-name"] = v.Value
+		case "_file":
+			stripped["_file"] = v.Value
+		case "_time":
+			stripped["timestamp"] = v.Value
+		case "_offset":
+			stripped["_offset"] = v.Value
+		case "message":
+			stripped["short_message"] = v.Value
+		case "short_message":
+			stripped["short_message"] = v.Value
+		case "full_message":
+			stripped["full_message"] = v.Value
+		case "level":
+			stripped["level"] = v.Value
+		default:
+			stripped["_"+k] = v.Value
+		}
+	}
+
+	stripped["version"] = "1.1"
+
+	bytes, err := json.Marshal(stripped)
+	if err != nil {
+		panic(err)
+	}
+	writer.Write(bytes)
 }
 
 func (*JsonEncoder) Encode(out map[string]Column, writer io.Writer) {

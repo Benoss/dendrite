@@ -100,6 +100,7 @@ func NewConfig(configFile string, hostname string) (*Config, error) {
 }
 
 func assembleConfigFiles(configFile string) (map[string]interface{}, error) {
+	logs.Info("Reading config file : %s", configFile)
 	doc, err := yaml.ReadFile(configFile)
 	if err != nil {
 		return nil, err
@@ -107,11 +108,14 @@ func assembleConfigFiles(configFile string) (map[string]interface{}, error) {
 
 	mapping := YamlUnmarshal(doc.Root).(map[string]interface{})
 
-	entries, err := filepath.Glob(path.Dir(configFile) + "/conf.d/*.yaml")
+	confD_path := path.Dir(configFile) + "/conf.d/*.yaml"
+	logs.Info("Reading config folder : %s", confD_path)
+	entries, err := filepath.Glob(confD_path)
 	if err != nil {
 		logs.Warn("Can't read relevant conf.d: %s", err)
 	} else {
 		for _, path := range entries {
+			logs.Info("Reading config file : %s", path)
 			doc, err := yaml.ReadFile(path)
 			if err != nil {
 				logs.Warn("Can't read relevant conf.d: %s", err)
